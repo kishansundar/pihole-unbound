@@ -1,5 +1,6 @@
 
-/usr/bin/wget -N https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -o /root/scripts/hosts
+
 set -e
 
 SRC="/root/scripts/hosts"
@@ -16,7 +17,8 @@ awk '/^0\.0\.0\.0/ {
     print "local-data: \""$2" A 0.0.0.0\""
 }' "$SRC" > "$OUTPUT"
 
+echo "done"
 
-rm -Rfr hosts
+rm -Rfr "$SRC"
 
 /usr/local/bin/pihole -g
