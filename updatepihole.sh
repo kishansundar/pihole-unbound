@@ -19,4 +19,4 @@ awk '/^0\.0\.0\.0/ {
 
 rm -Rfr hosts
 
-#/usr/local/bin/pihole -g
+/usr/local/bin/pihole -g
