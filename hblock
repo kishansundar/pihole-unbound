@@ -15,26 +15,17 @@ HOSTNAME=${HOSTNAME-$(uname -n)}
 BUILTIN_HEADER=''
 BUILTIN_FOOTER=''
 BUILTIN_SOURCES=$(cat <<-'EOF'
-https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts
-https://raw.githubusercontent.com/kishansundar/block/master/domains/personal.txt
-https://someonewhocares.org/hosts/zero/hosts
 https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-https://s3.amazonaws.com/lists.disconnect.me/simple_malvertising.txt
-https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
-https://zerodot1.gitlab.io/CoinBlockerLists/hosts_browser
-https://urlhaus.abuse.ch/downloads/hostfile/
-https://mirror1.malwaredomains.com/files/justdomains
-https://mirror.cedia.org.ec/malwaredomains/immortal_domains.txt
+https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
+https://someonewhocares.org/hosts/zero/hosts
 EOF
 )
 BUILTIN_WHITELIST=$(cat <<-'EOF'
-d2c8v52ll5s99u.cloudfront.net
-s.youtube.com
-pixel.nymag.com
-cdn.optimizely.com
 cdn.vidible.tv
+d2c8v52ll5s99u.cloudfront.net
 delivery.vidible.tv
+s.youtube.com
 tags.tiqcdn.com
 EOF
 )

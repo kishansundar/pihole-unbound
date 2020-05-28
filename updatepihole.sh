@@ -6,6 +6,7 @@ set -e
 SRC="/root/scripts/hosts"
 OUTPUT="/etc/unbound/ads/ads.conf"
 
+rm -Rfr "$OUTPUT"
 
 if [ ! -f "$SRC" ]; then
     echo "Could not open $SRC"
@@ -21,4 +22,4 @@ echo "done"
 
 rm -Rfr "$SRC"
 
-/usr/local/bin/pihole -g
+#/usr/local/bin/pihole -g
