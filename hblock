@@ -22,11 +22,21 @@ https://someonewhocares.org/hosts/zero/hosts
 EOF
 )
 BUILTIN_WHITELIST=$(cat <<-'EOF'
+cdn.optimizely.com
 cdn.vidible.tv
 d2c8v52ll5s99u.cloudfront.net
 delivery.vidible.tv
+geo-applefinance-cache.internal.query.g03.yahoodns.net
+mas-ext.amazon.com
+pixel.nymag.com
+s.adrise.tv
+s.shopify.com
 s.youtube.com
 tags.tiqcdn.com
+thepiratebay.org
+track.radiooooo.com
+tracking-protection.cdn.mozilla.net
+tracking.epicgames.com
 EOF
 )
 BUILTIN_BLACKLIST=''
