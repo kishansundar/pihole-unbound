@@ -15,10 +15,22 @@ HOSTNAME=${HOSTNAME-$(uname -n)}
 BUILTIN_HEADER=''
 BUILTIN_FOOTER=''
 BUILTIN_SOURCES=$(cat <<-'EOF'
-https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
+https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&mimetype=plaintext&useip=0.0.0.0
+https://raw.githubusercontent.com/AdAway/adaway.github.io/master/hosts.txt
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/UncheckyAds/hosts
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.2o7Net/hosts
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Dead/hosts
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Risk/hosts
+https://raw.githubusercontent.com/FadeMind/hosts.extras/master/add.Spam/hosts
+https://raw.githubusercontent.com/PolishFiltersTeam/KADhosts/master/KADhosts_without_controversies.txt
+https://raw.githubusercontent.com/StevenBlack/hosts/master/data/StevenBlack/hosts
+https://raw.githubusercontent.com/bigdargon/hostsVN/master/option/hosts-VN
+https://raw.githubusercontent.com/mitchellkrogza/Badd-Boyz-Hosts/master/hosts
+https://raw.githubusercontent.com/tiuxo/hosts/master/ads
 https://someonewhocares.org/hosts/zero/hosts
+https://urlhaus.abuse.ch/downloads/hostfile/
+https://winhelp2002.mvps.org/hosts.txt
+https://www.malwaredomainlist.com/hostslist/hosts.txt
 EOF
 )
 BUILTIN_WHITELIST=$(cat <<-'EOF'
@@ -26,12 +38,11 @@ cdn.optimizely.com
 cdn.vidible.tv
 d2c8v52ll5s99u.cloudfront.net
 delivery.vidible.tv
-geo-applefinance-cache.internal.query.g03.yahoodns.net
 mas-ext.amazon.com
+ocsp.apple.com 
 pixel.nymag.com
 s.adrise.tv
 s.shopify.com
-s.youtube.com
 tags.tiqcdn.com
 thepiratebay.org
 track.radiooooo.com
