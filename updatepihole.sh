@@ -22,4 +22,4 @@ echo "done"
 
 rm -Rfr "$SRC"
 
-/usr/local/bin/pihole -g
+#/usr/local/bin/pihole -g
