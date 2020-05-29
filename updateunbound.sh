@@ -1,6 +1,6 @@
+curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -o /root/scripts/hosts
 
-#curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -o /root/scripts/hosts
-bash /root/scripts/hblock -W /root/block/whitelist/white.list -O  /root/scripts/hosts
+
 set -e
 
 SRC="/root/scripts/hosts"
