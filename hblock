@@ -33,7 +33,7 @@ https://winhelp2002.mvps.org/hosts.txt
 https://www.malwaredomainlist.com/hostslist/hosts.txt
 EOF
 )
-BUILTIN_WHITELIST=/root/block/whitelist/white.list
+BUILTIN_WHITELIST=''
 BUILTIN_BLACKLIST=''
 
 # Check if a program exists
