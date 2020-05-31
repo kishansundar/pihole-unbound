@@ -1,5 +1,5 @@
-curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -o /root/scripts/hosts
-
+./hblock 
+#curl https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -o /root/scripts/hosts
 
 set -e
 
