@@ -195,7 +195,7 @@ main() {
 	headerFile='/etc/hblock.d/header'; defaultHeaderFile=${headerFile:?}; header=''
 	footerFile='/etc/hblock.d/footer'; defaultFooterFile=${footerFile:?}; footer=''
 	sourcesFile='/etc/hblock.d/sources.list'; defaultSourcesFile=${sourcesFile:?}; sources=''
-	whitelistFile='/root/block/whitelist/white.list'; defaultWhitelistFile=${whitelistFile:?}; whitelist=''
+	whitelistFile='/root/block/whitelist/unboundwhite.list'; defaultWhitelistFile=${whitelistFile:?}; whitelist=''
 	blacklistFile='/etc/hblock.d/blacklist.list'; defaultBlacklistFile=${blacklistFile:?}; blacklist=''
 	redirection='0.0.0.0'
 	template='\2 \1'
