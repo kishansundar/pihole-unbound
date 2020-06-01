@@ -12,4 +12,3 @@ cd "${SCRIPT_DIR:?}"
 git add "${SCRIPT_DIR:?}"
 git commit -m "${commitMsg:?} $timestamp "
 git push origin master
-

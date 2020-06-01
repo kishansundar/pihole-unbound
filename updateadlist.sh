@@ -1,11 +1,3 @@
-#rm -Rfr  /etc/pihole/gravity.db
-#sqlite3 /etc/pihole/gravity.db
-
-#sqlite3 /etc/pihole/gravity.db "delete from adlist;"
-#sqlite3 /etc/pihole/gravity.db "insert into adlist ($(cat /root/block/blocklist/ad.list));"
-
-
-
 #!/bin/sh
 
 create_sql_dump() {
