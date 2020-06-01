@@ -1,1 +1,1 @@
-/usr/local/bin/pihole -g
+/usr/local/bin/pihole -g -f
