@@ -18,9 +18,6 @@ rm -Rfr /etc/pihole/pihole-FTL.db
 echo "------------------------------------------"
 echo "Restarting Unbound..."
 sudo systemctl restart unbound
-#echo "------------------------------------------"
-#echo "Restarting Lighttpd..."
-#sudo systemctl restart lighttpd
 echo "------------------------------------------"
 echo "Restarting Pihole..."
 sudo systemctl restart pihole-FTL

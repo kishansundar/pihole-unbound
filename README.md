@@ -1,6 +1,6 @@
 # PIHOLE
 
-## Pihole Setup
+## Script Setup
 
 ```
 ./apt-upgrade.sh
@@ -8,22 +8,12 @@
 ./unbound-setup.sh
 ./unbound-git.sh
 ./unbound-stable.sh
-./unbound-update.sh
 ./service-update.sh
 ./post-install.sh
 ./cleanup.sh
 ./adlist.sh
 ./pihole-update.sh
-```
-
-## Unbound Setup
-
-```
-wget https://nlnetlabs.nl/downloads/unbound/unbound-1.13.1.tar.gz
-
-tar -xzf unbound-1.13.1.tar.gz && rm -Rfr unbound-1.13.1.tar.gz
-mv unbound-1.13.1 unbound
-./unbound.sh
+./service-reload.sh
 ```
 
 ## Lightttpd Settings
