@@ -18,3 +18,4 @@ git reset --hard origin/master
  sudo unbound-anchor -a /etc/unbound/root.key -v
 
  unbound-control-setup
+rm -Rfr ~/unbound-git

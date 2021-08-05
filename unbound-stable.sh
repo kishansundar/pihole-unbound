@@ -19,3 +19,5 @@ cd ~/unbound-stable
  sudo unbound-anchor -a /etc/unbound/root.key -v
 
  unbound-control-setup
+
+ rm -Rfr ~/unbound-stable
