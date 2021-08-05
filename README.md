@@ -1,1 +1,1 @@
-/etc/systemd/system/\*\*\*\*.service
+/etc/systemd/system/SERVICE_NAME.service
