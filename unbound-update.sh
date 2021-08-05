@@ -1,5 +1,6 @@
 #! /bin/sh
-
+rm -Rfr ~/unbound
+git clone https://github.com/NLnetLabs/unbound.git ~/unbound
 cd ~/unbound
 git fetch --all
 git clean -df
