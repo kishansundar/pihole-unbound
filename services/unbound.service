@@ -15,7 +15,6 @@ ExecStartPre=/bin/bash /root/scripts/ulimit.sh
 ExecStart=/usr/sbin/unbound -d -p
 PIDFile=/etc/unbound/unbound.pid
 ExecReload=/bin/kill -HUP $MAINPID
+
 Restart=always
 RestartSec=360
-
-#Restart=on-failure
