@@ -1,8 +1,14 @@
+#! /bin/sh
+echo "------------------------------------------"
 echo "Pihole... Status"
 sudo systemctl status pihole-FTL
-#echo "NSD... Status"
-#sudo systemctl status nsd
+echo "------------------------------------------"
 echo "Unbound... Status"
 sudo systemctl status unbound
-#echo "Stubby... Status"
-#sudo systemctl status stubby
+echo "------------------------------------------"
+echo "PiholeTimer... Status"
+sudo systemctl status pihole.timer
+echo "------------------------------------------"
+echo "RootHints... Status"
+sudo systemctl status roothints.timer
+echo "------------------------------------------"
