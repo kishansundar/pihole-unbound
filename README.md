@@ -7,7 +7,7 @@
 ./pihole-setup.sh
 ./unbound-setup.sh
 ./unbound-git.sh
-./unbound-stable.sh
+./unbound-latest.sh
 ./service-update.sh
 ./post-install.sh
 ./service-reload.sh
