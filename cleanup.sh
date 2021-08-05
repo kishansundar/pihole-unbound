@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "------------------------------------------"
-echo "Systemctl Daemon Reload..."
+echo "Daemon Reload..."
 sudo systemctl daemon-reload
 echo "------------------------------------------"
 echo "Stopping Pihole..."
