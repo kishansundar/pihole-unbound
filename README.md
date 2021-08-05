@@ -6,6 +6,7 @@
 `./pihole-setup.sh`
 `./unbound-setup.sh`
 `./unbound-update.sh`
+`./service-update.sh`
 `./post-install.sh`
 `./cleanup.sh`
 `./adlist.sh`
