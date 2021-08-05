@@ -10,10 +10,10 @@
 ./unbound-stable.sh
 ./service-update.sh
 ./post-install.sh
-./cleanup.sh
+./service-reload.sh
 ./adlist.sh
 ./pihole-update.sh
-./service-reload.sh
+./cleanup.sh
 ```
 
 ## Lightttpd Settings
