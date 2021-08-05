@@ -2,15 +2,19 @@
 
 ## Pihole Setup
 
-`./apt-upgrade.sh`
-`./pihole-setup.sh`
-`./unbound-setup.sh`
-`./unbound-update.sh`
-`./service-update.sh`
-`./post-install.sh`
-`./cleanup.sh`
-`./adlist.sh`
-`./pihole-update.sh`
+```
+./apt-upgrade.sh
+./pihole-setup.sh
+./unbound-setup.sh
+./unbound-git.sh
+./unbound-stable.sh
+./unbound-update.sh
+./service-update.sh
+./post-install.sh
+./cleanup.sh
+./adlist.sh
+./pihole-update.sh
+```
 
 ## Unbound Setup
 

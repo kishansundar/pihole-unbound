@@ -17,7 +17,6 @@ echo "127.0.1.2 unbound-ipv4" >> /etc/hosts
 echo "::1 unbound-ipv6" >> /etc/hosts
 echo "192.168.1.1 Router.home" >> /etc/hosts
 
-
 echo "------------------------------------------"
 echo "Enabling... Services"
 sudo systemctl daemon-reload
