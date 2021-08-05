@@ -10,7 +10,7 @@ Wants=nss-lookup.target
 WantedBy=multi-user.target
 
 [Service]
-ExecStartPre=/usr/sbin/unbound-anchor -a /etc/unbound/root.key -r /etc/unbound/root.hints -v
+#ExecStartPre=/usr/sbin/unbound-anchor -a /etc/unbound/root.key -r /etc/unbound/root.hints -v
 ExecStartPre=/bin/bash /root/scripts/ulimit.sh
 ExecStart=/usr/sbin/unbound -d -p
 PIDFile=/etc/unbound/unbound.pid
