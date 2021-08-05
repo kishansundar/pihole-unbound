@@ -1,0 +1,21 @@
+
+[Unit]
+Description=Validating, recursive, and caching DNS resolver
+Documentation=man:unbound(8)
+After=network.target
+Before=network-online.target nss-lookup.target
+Wants=nss-lookup.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+ExecStartPre=/usr/sbin/unbound-anchor -a /etc/unbound/root.key -r /etc/unbound/root.hints -v
+ExecStartPre=/bin/bash /root/scripts/ulimit.sh
+ExecStart=/usr/sbin/unbound -d -p
+PIDFile=/etc/unbound/unbound.pid
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=360
+
+#Restart=on-failure

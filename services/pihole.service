@@ -1,0 +1,7 @@
+
+[Unit]
+Description=Update pihole
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/pihole -g
