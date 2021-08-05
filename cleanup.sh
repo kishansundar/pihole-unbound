@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo "------------------------------------------"
 echo "Stopping Pihole..."
 sudo systemctl stop pihole-FTL
 echo "------------------------------------------"
@@ -15,13 +15,13 @@ rm -Rfr /etc/pihole/pihole-FTL.db
 echo "------------------------------------------"
 echo "Restarting Unbound..."
 sudo systemctl restart unbound
-echo "------------------------------------------"
-#echo "Restarting Stubby..."
-#sudo systemctl restart stubby
+#echo "------------------------------------------"
+#echo "Restarting Lighttpd..."
+#sudo systemctl restart lighttpd
 echo "------------------------------------------"
 echo "Restarting Pihole..."
 sudo systemctl restart pihole-FTL
 echo "------------------------------------------"
 echo "Done."
-
+echo "------------------------------------------"
 exit
