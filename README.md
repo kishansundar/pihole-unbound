@@ -1,4 +1,4 @@
-#PIHOLE SETUP
+# PIHOLE SETUP
 
 ```
 cp -rf services/unbound.service /etc/systemd/system/unbound.service
