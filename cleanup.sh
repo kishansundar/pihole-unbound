@@ -2,21 +2,26 @@
 
 echo "Stopping Pihole..."
 sudo systemctl stop pihole-FTL
-echo "Deleting Pihole DB..."
-rm -Rfr /etc/pihole/pihole-FTL.db
+echo "------------------------------------------"
 echo "Removing Logs..."
 /usr/local/bin/pihole -f
 rm -Rfr /var/log/*
-echo "Restarting Unbound..."
-sudo systemctl restart unbound
-#echo "Restarting Stubby..."
-#sudo systemctl restart stubby
+echo "------------------------------------------"
 echo "ARP FLUSH...."
 /usr/local/bin/pihole arpflush
-
+echo "------------------------------------------"
+echo "Deleting Pihole DB..."
+rm -Rfr /etc/pihole/pihole-FTL.db
+echo "------------------------------------------"
+echo "Restarting Unbound..."
+sudo systemctl restart unbound
+echo "------------------------------------------"
+#echo "Restarting Stubby..."
+#sudo systemctl restart stubby
+echo "------------------------------------------"
 echo "Restarting Pihole..."
 sudo systemctl restart pihole-FTL
-
+echo "------------------------------------------"
 echo "Done."
 
 exit
