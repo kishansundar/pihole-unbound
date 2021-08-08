@@ -30,4 +30,3 @@ if [ ! $? -eq 0 ]; then
 fi
 sqlite3 /etc/pihole/gravity.db < $TMP_SQL
 rm $TMP_SQL
-
