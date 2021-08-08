@@ -13,6 +13,7 @@ WantedBy=multi-user.target
 ExecStartPre=/usr/sbin/unbound-anchor -a /etc/unbound/root.key -r /etc/unbound/root.hints -v
 ExecStartPre=/bin/bash /root/scripts/ulimit.sh
 ExecStart=/usr/sbin/unbound -d -p
+ExecStartPost=/usr/bin/curl -o /etc/unbound/root.hints https://www.internic.net/domain/named.cache
 PIDFile=/etc/unbound/unbound.pid
 ExecReload=/bin/kill -HUP $MAINPID
 
