@@ -1,9 +1,8 @@
 [Unit]
-Description=Run root.hints monthly
+Description=Run root.hints weekly
 
 [Timer]
-#OnCalendar=monthly
-OnCalendar=*-*-* 3:00:00
+OnCalendar=weekly
 Persistent=true
 
 [Install]
