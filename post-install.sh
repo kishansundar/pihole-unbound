@@ -1,6 +1,10 @@
 #! /bin/sh
 
 echo "------------------------------------------"
+echo "User Access... Unbound"
+chown -R unbound:unbound /etc/unbound
+
+echo "------------------------------------------"
 echo "Updating... piholeconfig"
 echo "ANALYZE_ONLY_A_AND_AAAA=true" >> /etc/pihole/pihole-FTL.conf
 echo "MAXDBDAYS=1" >> /etc/pihole/pihole-FTL.conf
