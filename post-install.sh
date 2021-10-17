@@ -31,5 +31,9 @@ sudo systemctl enable --now roothints.timer
 sudo systemctl enable --now unbound.service
 sudo systemctl enable --now pihole.timer
 echo "------------------------------------------"
+echo "Cleaningup... Folders"
+rm -Rfr ~/unbound
+rm -Rfr ~/Pi-hole
+echo "------------------------------------------"
 echo "Done."
 echo "------------------------------------------"
