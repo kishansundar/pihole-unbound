@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version=1.13.2
+version=1.14.0 
 
 wget https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz
 
