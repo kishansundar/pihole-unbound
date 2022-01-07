@@ -9,4 +9,4 @@ cd "${SCRIPT_DIR:?}"
 git fetch --all
 git clean -df
 git pull 
-git reset --hard origin/master
+git reset --hard origin/main
