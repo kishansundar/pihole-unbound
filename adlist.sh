@@ -22,7 +22,7 @@ EOF
 
 # Update adlists
 TMP_SQL="$(mktemp --tmpdir adlist.XXXXXX.sql)"
-create_sql_dump "https://v.firebog.net/hosts/lists.php?type=nocross" "$TMP_SQL"
+create_sql_dump "https://gitlab.com/kishansundar/pihole-adlist/-/raw/main/adlist" "$TMP_SQL"
 if [ ! $? -eq 0 ]; then
     echo "ERROR: Unable to fetch adlist"
     rm $TMP_SQL
