@@ -12,7 +12,7 @@ rm -Rfr /var/log/*
 echo "------------------------------------------"
 echo "ARP FLUSH...."
 /usr/local/bin/pihole arpflush
-echo "------------------------------------------"
+#echo "------------------------------------------"
 #echo "Deleting Pihole DB..."
 #rm -Rfr /etc/pihole/pihole-FTL.db
 #echo "------------------------------------------"
