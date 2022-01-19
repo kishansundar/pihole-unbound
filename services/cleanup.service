@@ -4,4 +4,4 @@ Description=Update root hints for unbound
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/bash -o /root/scripts/cleanup.sh
+ExecStart=/usr/bin/bash /root/scripts/cleanup.sh
