@@ -12,3 +12,6 @@ echo "------------------------------------------"
 echo "RootHints... Status"
 sudo systemctl status roothints.timer
 echo "------------------------------------------"
+echo "Cleanup... Status"
+sudo systemctl status cleanup.timer
+echo "------------------------------------------"

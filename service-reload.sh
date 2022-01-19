@@ -11,5 +11,8 @@ echo "------------------------------------------"
 echo "Restarting Roothints Timer..."
 sudo systemctl restart roothints.timer
 echo "------------------------------------------"
+echo "Restarting cleanup Timer..."
+sudo systemctl restart cleanup.timer
+echo "------------------------------------------"
 echo "Done."
 echo "------------------------------------------"
