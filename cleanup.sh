@@ -9,7 +9,7 @@ echo "------------------------------------------"
 echo "Removing Logs..."
 #/usr/local/bin/pihole -f
 rm -Rfr /var/log/*
-sudo service pihole-FTL stop && sudo rm /etc/pihole/pihole-FTL.db && sudo service pihole-FTL start
+#sudo service pihole-FTL stop && sudo rm /etc/pihole/pihole-FTL.db && sudo service pihole-FTL start
 echo "------------------------------------------"
 echo "ARP FLUSH...."
 /usr/local/bin/pihole arpflush
