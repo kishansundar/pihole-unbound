@@ -8,7 +8,7 @@ git clean -df
 git pull 
 git reset --hard origin/master
 
-./configure --prefix=/usr --sysconfdir=/etc --disable-static --with-pidfile=/etc/unbound/unbound.pid --with-libevent --enable-dnscrypt --with-pthreads --disable-systemd --enable-pie --with-libnghttp2
+./configure --prefix=/usr --sysconfdir=/etc --disable-static --with-pidfile=/etc/unbound/unbound.pid --with-libevent --enable-dnscrypt --enable-dnstap --enable-ecdsa --enable-gost --with-pthreads --disable-systemd --enable-pie --with-libnghttp2
 
 make && sudo make install
 
