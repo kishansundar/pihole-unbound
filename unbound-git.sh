@@ -10,7 +10,8 @@ git reset --hard origin/master
 
 #./configure --prefix=/usr --sysconfdir=/etc --disable-static --with-pidfile=/etc/unbound/unbound.pid --with-libevent --enable-dnscrypt --enable-dnstap --enable-ecdsa --enable-gost --with-pthreads --disable-systemd --enable-pie --with-libnghttp2
 
-./configure --prefix=/usr --sysconfdir=/etc  --with-libevent --with-ssl --with-pthreads
+./configure --prefix=/usr --sysconfdir=/etc  --with-libevent --with-ssl --with-pthreads --enable-ecdsa --enable-ed25519 --enable-gost --enable-pie
+
 
 make && sudo make install
 
@@ -19,6 +20,8 @@ sudo mv -v /usr/sbin/unbound-host /usr/bin/
 sudo curl --output /etc/unbound/root.hints https://www.internic.net/domain/named.root
 
 sudo unbound-anchor -a /etc/unbound/root.key -v
+
+#sudo wget -O /etc/unbound/root.key https://www.internic.net/domain/root.zone
 
 unbound-control-setup
 
