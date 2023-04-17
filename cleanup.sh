@@ -15,7 +15,7 @@ echo "ARP FLUSH...."
 /usr/local/bin/pihole arpflush
 #echo "------------------------------------------"
 #echo "Deleting Pihole DB..."
-rm -Rfr /etc/pihole/pihole-FTL.db
+#rm -Rfr /etc/pihole/pihole-FTL.db
 #echo "------------------------------------------"
 #echo "Restarting Unbound..."
 #sudo systemctl restart unbound
