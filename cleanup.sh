@@ -1,27 +1,36 @@
 #!/bin/bash
+
+# This script performs maintenance tasks for Pi-hole and other system services.
+# It cleans up log files, flushes caches, and restarts services.
+
 echo "------------------------------------------"
-echo "Daemon Reload..."
-sudo systemctl daemon-reload
+echo "Cleaning up log files..."
+
+# Truncate common large log files to zero size instead of deleting them.
+# This is safer as it preserves the file with its permissions.
+sudo truncate -s 0 /var/log/syslog
+sudo truncate -s 0 /var/log/auth.log
+sudo truncate -s 0 /var/log/daemon.log
+sudo truncate -s 0 /var/log/kern.log
+
+# Remove old, rotated log files (e.g., .log.1, .log.2.gz)
+sudo find /var/log -name "*.log.*" -type f -delete
+sudo find /var/log -name "*.gz" -type f -delete
+
+echo "Flushing Pi-hole logs..."
+/usr/local/bin/pihole -f
+
 echo "------------------------------------------"
-echo "Stopping Pihole..."
-sudo systemctl stop pihole-FTL
-echo "------------------------------------------"
-echo "Removing Logs..."
-#/usr/local/bin/pihole -f
-rm -Rfr /var/log/*
-#sudo service pihole-FTL stop && sudo rm /etc/pihole/pihole-FTL.db && sudo service pihole-FTL start
-echo "------------------------------------------"
-echo "ARP FLUSH...."
+echo "Flushing ARP cache for Pi-hole..."
 /usr/local/bin/pihole arpflush
-#echo "------------------------------------------"
-#echo "Deleting Pihole DB..."
-#rm -Rfr /etc/pihole/pihole-FTL.db
-#echo "------------------------------------------"
-#echo "Restarting Unbound..."
-#sudo systemctl restart unbound
+
 echo "------------------------------------------"
-echo "Restarting Pihole..."
+echo "Restarting services..."
+
+# Restart services to apply changes and ensure they are running correctly.
 sudo systemctl restart pihole-FTL
+sudo systemctl restart unbound
+
 echo "------------------------------------------"
-echo "Done."
+echo "Cleanup complete."
 echo "------------------------------------------"

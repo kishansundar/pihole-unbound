@@ -1,7 +1,7 @@
-
 [Unit]
-Description=Update root hints for unbound
-After=network.target
+Description=Perform weekly maintenance for Pi-hole and other system services
+Wants=pihole-FTL.service unbound.service
+After=network.target pihole-FTL.service unbound.service
 
 [Service]
 ExecStart=/usr/bin/bash /root/scripts/cleanup.sh
