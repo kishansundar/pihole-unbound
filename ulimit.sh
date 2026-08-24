@@ -16,4 +16,3 @@ sysctl -w net.ipv4.tcp_congestion_control=bbr
 sysctl -w net.core.somaxconn=510
 sysctl -w net.core.netdev_max_backlog=2000
 sysctl -w net.ipv4.ip_local_port_range='1024 65000'
-sysctl -p
