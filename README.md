@@ -43,9 +43,9 @@ it automatically.
 
 - Debian-based host (developed against DietPi on a Raspberry Pi), run as
   `root`.
-- This repo cloned to a fixed path — `post-install.sh` enables systemd
-  units by name, and expects them to already be installed (see **State of
-  this repo** below).
+- A host that already has the systemd units and `unbound.conf` in place
+  (see **State of this repo** below) — nothing here installs or enables
+  them anymore.
 - Internet access for `apt`, GitHub/GitLab, and `nlnetlabs.nl`.
 
 ## Install order
@@ -55,7 +55,6 @@ it automatically.
 ./pihole-setup.sh
 ./unbound-setup.sh
 ./unbound-latest.sh
-./post-install.sh
 ./adlist.sh
 ./pihole-update.sh
 ./cleanup.sh
@@ -70,16 +69,19 @@ it automatically.
 4. **`unbound-latest.sh`** — downloads, builds, and installs Unbound
    1.26.0 from source, fetches root hints and the DNSSEC trust anchor,
    runs `unbound-control-setup`.
-5. **`post-install.sh`** — `chown`s `/etc/unbound`, tweaks
-   `pihole-FTL.conf`/`dnsmasq`/`/etc/hosts`, enables and restarts the
-   `unbound`, `pihole.timer`, `roothints.timer`, and `cleanup.timer`
-   systemd units. **Requires those units to already exist on the host —
-   see below.**
-6. **`adlist.sh`** — fetches the blocklist-URL list and loads it into
+5. **`adlist.sh`** — fetches the blocklist-URL list and loads it into
    `gravity.db`.
-7. **`pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
-8. **`cleanup.sh`** — first maintenance pass: log truncation, cache
+6. **`pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
+7. **`cleanup.sh`** — first maintenance pass: log truncation, cache
    flush, service restart.
+
+There is no longer a script that deploys `unbound.conf`/the systemd units,
+sets `pihole-FTL.conf`/`dnsmasq`/`/etc/hosts`, or enables/restarts the
+`unbound`, `pihole.timer`, `roothints.timer`, `cleanup.timer` services —
+that was `post-install.sh`, removed. On a host where those units are
+already installed and enabled (true of the currently-provisioned box),
+nothing above needs it. On a fresh host, none of that setup happens unless
+you do it by hand or restore the script — see below.
 
 ### Lighttpd HTTPS (manual, optional)
 
@@ -107,13 +109,16 @@ sudo systemctl restart lighttpd
 
 This repo does **not** contain the systemd unit files (`unbound.service`,
 `pihole.service`/`.timer`, `roothints.service`/`.timer`,
-`cleanup.service`/`.timer`) or `unbound.conf` — they were removed. On the
-currently-provisioned host they still exist under `/etc/systemd/system` and
-`/etc/unbound`, so `post-install.sh`'s `enable --now`/`restart` calls work
-today. **A fresh clone onto a new host has no source for these files** —
-they'd need to be recreated or recovered from an earlier commit
-(`git log --all -- '*.service' '*.timer' conf/unbound.conf`) before
-`post-install.sh` will do anything useful.
+`cleanup.service`/`.timer`), `unbound.conf`, or a script to deploy,
+enable, or reload any of them — `conf/`, `services/`, and `post-install.sh`
+were all removed. The currently-provisioned host still has those units
+installed, enabled, and running under `/etc/systemd/system` and
+`/etc/unbound` from before, which is the only reason this toolkit still
+works today. **A fresh clone onto a new host has no path to a working
+install** — the unit files, `unbound.conf`, and the config/enable step all
+need to be recreated by hand or recovered from git history
+(`git log --all -- '*.service' '*.timer' conf/unbound.conf post-install.sh`)
+before any of the scripts above will have something to run against.
 
 ## Script reference
 
@@ -123,7 +128,6 @@ they'd need to be recreated or recovered from an earlier commit
 | `pihole-setup.sh` | install once | Installs Pi-hole via its own official installer. |
 | `unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
 | `unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source. |
-| `post-install.sh` | install, and after any config/unit change | System config (`pihole-FTL.conf`, `dnsmasq`, `/etc/hosts`) + enable/reload/restart the systemd units. |
 | `adlist.sh` | recurring, manual | Loads the blocklist URL list into `gravity.db`. |
 | `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
 | `cleanup.sh` | weekly, via `cleanup.timer` | Truncates logs, flushes Pi-hole's cache, restarts `pihole-FTL`/`unbound`. |
