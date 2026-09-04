@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
 version="${UNBOUND_VERSION:-1.26.0}"
 
 # --- (3) check whether a newer release exists upstream (best-effort, non-fatal) ---
@@ -85,6 +87,33 @@ make || { echo "ERROR: build failed" >&2; exit 1; }
 sudo make install || { echo "ERROR: make install failed" >&2; exit 1; }
 
 sudo mv -v /usr/sbin/unbound-host /usr/bin/
+
+# --- deploy this repo's tracked unbound.conf / unbound.service / ulimit.sh ---
+for f in unbound.conf unbound.service ulimit.sh; do
+  [ -f "${SCRIPT_DIR}/${f}" ] || { echo "ERROR: ${SCRIPT_DIR}/${f} not found — can't deploy" >&2; exit 1; }
+done
+
+if [ -f /etc/unbound/unbound.conf ]; then
+  conf_backup="/etc/unbound/unbound.conf.$(date +%Y%m%d_%H%M%S).bak"
+  sudo cp -p /etc/unbound/unbound.conf "$conf_backup" \
+    && echo "Backed up existing /etc/unbound/unbound.conf to $conf_backup"
+fi
+
+sudo cp "${SCRIPT_DIR}/unbound.conf" /etc/unbound/unbound.conf \
+  && sudo chown root:root /etc/unbound/unbound.conf \
+  && sudo chmod 644 /etc/unbound/unbound.conf \
+  || { echo "ERROR: failed to deploy unbound.conf" >&2; exit 1; }
+
+sudo cp "${SCRIPT_DIR}/unbound.service" /etc/systemd/system/unbound.service \
+  && sudo chmod 644 /etc/systemd/system/unbound.service \
+  || { echo "ERROR: failed to deploy unbound.service" >&2; exit 1; }
+
+sudo cp "${SCRIPT_DIR}/ulimit.sh" /etc/unbound/ulimit.sh \
+  && sudo chown root:root /etc/unbound/ulimit.sh \
+  && sudo chmod 755 /etc/unbound/ulimit.sh \
+  || { echo "ERROR: failed to deploy ulimit.sh" >&2; exit 1; }
+
+sudo systemctl daemon-reload
 
 # Fetch to a temp file first and only replace the live root.hints if the
 # download actually succeeded and looks like a real hints file — a failed
