@@ -14,6 +14,17 @@ if [ -n "$latest_seen" ] && [ "$latest_seen" != "$version" ]; then
   echo "      override with: UNBOUND_VERSION=${latest_seen} ./unbound-latest.sh" >&2
 fi
 
+# gpg/gpgv are needed for signature verification below. Present on this
+# host (gpgv is even an apt dependency here), but this script runs across
+# more than one machine, and not every Debian-derived host ships gpgv by
+# default (gpg's presence doesn't guarantee gpgv's — they're separate
+# packages) — install rather than just erroring if either is missing.
+if ! command -v gpg >/dev/null 2>&1 || ! command -v gpgv >/dev/null 2>&1; then
+  echo "Installing gpg/gpgv (required for release signature verification)..."
+  sudo apt-get install -y gnupg gpgv \
+    || { echo "ERROR: could not install gnupg/gpgv" >&2; exit 1; }
+fi
+
 cd ~ || exit 1
 
 wget -O "unbound-${version}.tar.gz" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
@@ -32,6 +43,22 @@ wget -O "unbound-${version}.tar.gz.asc" "https://nlnetlabs.nl/downloads/unbound/
 wget -O nlnetlabs.asc "https://nlnetlabs.nl/downloads/keys/releases-g2.asc" \
   || { echo "ERROR: download of NLnet Labs' signing key failed" >&2; exit 1; }
 
+# Resolve gpgv explicitly rather than relying on a bare PATH lookup — it's
+# a separate package from gpg (both installed here, but seen "gpgv: command
+# not found" in a shell where gpg itself worked fine, i.e. a PATH gap
+# specific to gpgv, not gpg). /usr/bin is where Debian puts it; it's also
+# an apt dependency, so this path is about as safe an assumption as exists
+# on a Debian-derived host.
+GPGV_BIN=$(command -v gpgv 2>/dev/null || true)
+if [ -z "$GPGV_BIN" ] && [ -x /usr/bin/gpgv ]; then
+  GPGV_BIN=/usr/bin/gpgv
+fi
+if [ -z "$GPGV_BIN" ]; then
+  echo "ERROR: gpgv not found (checked PATH and /usr/bin/gpgv)." >&2
+  echo "       Install it with: sudo apt install gpgv" >&2
+  exit 1
+fi
+
 # gpgv (unlike full gpg) requires a binary keyring — the downloaded key is
 # ASCII-armored, so it has to be dearmored first or gpgv fails with
 # "invalid packet" trying to parse the "-----BEGIN PGP..." text as binary.
@@ -47,7 +74,7 @@ if [ "$got_fpr" != "$NLNETLABS_FPR" ]; then
   exit 1
 fi
 
-gpgv --keyring=./nlnetlabs.certs "unbound-${version}.tar.gz.asc" "unbound-${version}.tar.gz" \
+"$GPGV_BIN" --keyring=./nlnetlabs.certs "unbound-${version}.tar.gz.asc" "unbound-${version}.tar.gz" \
   || { echo "ERROR: signature verification failed for unbound-${version}.tar.gz — refusing to build" >&2; exit 1; }
 echo "OK: unbound-${version}.tar.gz signature verified against NLnet Labs' release key."
 
