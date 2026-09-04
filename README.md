@@ -26,7 +26,7 @@ flowchart LR
     gdb -.->|"pihole -g compiles\n(manual only)"| ftl
     regexfile["regex.txt"] --> regexsh["regex.sh"]
     regexsh -->|"sqlite3 INSERT\n+ pihole reloadlists"| gdb
-    admin["lighttpd admin UI\n:80 / :443"] -.manages.-> ftl
+    admin["pihole-FTL webserver\n:80 / :443\n(built-in, v6+)"] -.manages.-> ftl
 ```
 
 Pi-hole (FTL) is the DNS server every device on the LAN talks to. It checks
@@ -88,28 +88,6 @@ host where those units are already installed and enabled (true of the
 currently-provisioned box), nothing above needs it. On a fresh host, none
 of that setup happens unless you do it by hand or restore the script —
 see below.
-
-### Lighttpd HTTPS (manual, optional)
-
-```
-mkdir /etc/lighttpd/certs
-openssl req -x509 -nodes -days 7300 -newkey rsa:2048 -sha256 \
-  -keyout /etc/lighttpd/certs/server.pem -out /etc/lighttpd/certs/server.pem
-chmod 600 /etc/lighttpd/certs/server.pem
-```
-
-Add `mod_openssl` to `server.modules` in `/etc/lighttpd/lighttpd.conf`, then:
-
-```
-$SERVER["socket"] == ":443" {
-    ssl.engine = "enable"
-    ssl.pemfile = "/etc/lighttpd/certs/server.pem"
-}
-```
-
-```
-sudo systemctl restart lighttpd
-```
 
 ## State of this repo
 
