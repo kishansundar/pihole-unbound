@@ -1,5 +1,24 @@
 #! /bin/sh
 
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+echo "------------------------------------------"
+echo "Copying... *.service"
+cp -rf ${SCRIPT_DIR:?}/services/unbound.service /etc/systemd/system/unbound.service
+cp -rf ${SCRIPT_DIR:?}/services/pihole.service /etc/systemd/system/pihole.service
+cp -rf ${SCRIPT_DIR:?}/services/roothints.service /etc/systemd/system/roothints.service
+cp -rf ${SCRIPT_DIR:?}/services/cleanup.service /etc/systemd/system/cleanup.service
+
+echo "------------------------------------------"
+echo "Copying... *.timer"
+cp -rf ${SCRIPT_DIR:?}/services/pihole.timer /etc/systemd/system/pihole.timer
+cp -rf ${SCRIPT_DIR:?}/services/roothints.timer /etc/systemd/system/roothints.timer
+cp -rf ${SCRIPT_DIR:?}/services/cleanup.timer /etc/systemd/system/cleanup.timer
+
+echo "------------------------------------------"
+echo "Copying... unbound.conf"
+cp -rf ${SCRIPT_DIR:?}/conf/unbound.conf /etc/unbound/unbound.conf
+
 echo "------------------------------------------"
 echo "User Access... Unbound"
 chown -R unbound:unbound /etc/unbound
@@ -30,10 +49,28 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now roothints.timer
 sudo systemctl enable --now unbound.service
 sudo systemctl enable --now pihole.timer
+
 echo "------------------------------------------"
 echo "Cleaningup... Folders"
 rm -Rfr ~/unbound
 rm -Rfr ~/Pi-hole
+
+echo "------------------------------------------"
+echo "Daemon Reload..."
+sudo systemctl daemon-reload
+echo "------------------------------------------"
+echo "Restarting Unbound..."
+sudo systemctl restart unbound
+echo "------------------------------------------"
+echo "Restarting Pihole Timer..."
+sudo systemctl restart pihole.timer
+echo "------------------------------------------"
+echo "Restarting Roothints Timer..."
+sudo systemctl restart roothints.timer
+echo "------------------------------------------"
+echo "Restarting cleanup Timer..."
+sudo systemctl restart cleanup.timer
+
 echo "------------------------------------------"
 echo "Done."
 echo "------------------------------------------"
