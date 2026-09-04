@@ -21,18 +21,25 @@ flowchart LR
     decision -->|"no, cache miss"| unbound["Unbound\n127.0.0.1:5353\n(loopback only)"]
     unbound -->|"DNS-over-TLS :853"| quad9["Quad9\n9.9.9.9 / 149.112.112.112"]
     unbound -.->|"root.hints, monthly"| hints["roothints.timer"]
-    loader["adlist.sh"] -->|"sqlite3 INSERT"| gdb[("gravity.db")]
+    blocklist["blocklist.txt"] --> loader["adlist.sh"]
+    loader -->|"sqlite3 INSERT"| gdb[("gravity.db")]
     gdb -.->|"pihole -g compiles\n(manual only)"| ftl
+    regexfile["regex.txt"] --> regexsh["regex.sh"]
+    regexsh -->|"sqlite3 INSERT\n+ pihole reloadlists"| gdb
     admin["lighttpd admin UI\n:80 / :443"] -.manages.-> ftl
 ```
 
 Pi-hole (FTL) is the DNS server every device on the LAN talks to. It checks
 each query against `/etc/pihole/gravity.db` and sinkholes matches; anything
 else goes to Unbound, which only listens on loopback (`127.0.0.1:5353`) and
-forwards upstream over DNS-over-TLS to Quad9. Blocklists are not managed
-through Pi-hole's own UI — `adlist.sh` writes them directly into
-`gravity.db` via `sqlite3` from a URL list hosted at
-[kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist).
+forwards upstream over DNS-over-TLS to Quad9. Blocklists and regex rules
+are not managed through Pi-hole's own UI — `adlist.sh` reads URLs from the
+local `blocklist.txt` and writes them into `gravity.db`'s `adlist` table;
+`regex.sh` reads patterns from the local `regex.txt` and writes them into
+`gravity.db`'s `domainlist` table (type `3`, deny/regex), then runs
+`pihole reloadlists`. Both used to depend on an external GitLab repo
+([kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist))
+— that repo is gone now; the source lists live in this repo instead.
 
 Pi-hole's upstream DNS server has to be pointed at `127.0.0.1#5353` for this
 to work — that's set interactively during `pihole-setup.sh`'s call into
@@ -43,10 +50,12 @@ it automatically.
 
 - Debian-based host (developed against DietPi on a Raspberry Pi), run as
   `root`.
-- A host that already has the systemd units and `unbound.conf` in place
-  (see **State of this repo** below) — nothing here installs or enables
-  them anymore.
-- Internet access for `apt`, GitHub/GitLab, and `nlnetlabs.nl`.
+- A host that already has the systemd units enabled and running (see
+  **State of this repo** below) — `unbound.conf`/`unbound.service` are
+  tracked in this repo again, but nothing here deploys them to `/etc` or
+  reloads systemd.
+- Internet access for `apt`, GitHub, and `nlnetlabs.nl`. No longer needs
+  GitLab — `adlist.sh`/`regex.sh` read local files now.
 
 ## Install order
 
@@ -68,8 +77,8 @@ it automatically.
 4. **`unbound-latest.sh`** — downloads, builds, and installs Unbound
    1.26.0 from source, fetches root hints and the DNSSEC trust anchor,
    runs `unbound-control-setup`.
-5. **`adlist.sh`** — fetches the blocklist-URL list and loads it into
-   `gravity.db`.
+5. **`adlist.sh`** — reads `blocklist.txt` (tracked in this repo) and
+   loads its URLs into `gravity.db`.
 6. **`pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
 
 There is no longer a script that deploys `unbound.conf`/the systemd units,
@@ -104,18 +113,18 @@ sudo systemctl restart lighttpd
 
 ## State of this repo
 
-This repo does **not** contain the systemd unit files (`unbound.service`,
-`pihole.service`/`.timer`, `roothints.service`/`.timer`), `unbound.conf`,
-or a script to deploy, enable, or reload any of them — `conf/`,
-`services/`, and `post-install.sh` were all removed. The
-currently-provisioned host still has those units installed, enabled, and
-running under `/etc/systemd/system` and `/etc/unbound` from before, which
-is the only reason this toolkit still works today. **A fresh clone onto a
-new host has no path to a working install** — the unit files,
-`unbound.conf`, and the config/enable step all need to be recreated by
-hand or recovered from git history
-(`git log --all -- '*.service' '*.timer' conf/unbound.conf post-install.sh`)
-before any of the scripts above will have something to run against.
+`unbound.conf` and `unbound.service` are tracked in this repo again (as
+plain files at the repo root, matching the live `/etc/unbound/unbound.conf`
+and `/etc/systemd/system/unbound.service` exactly) — but **no script
+deploys, enables, or reloads them.** `conf/`, `services/`, and
+`post-install.sh` (which used to do that copying) were removed earlier and
+haven't been restored. The currently-provisioned host works because those
+files are already live under `/etc/systemd/system` and `/etc/unbound` from
+before; a fresh clone onto a new host would need them copied into place
+and `systemctl daemon-reload && systemctl enable --now unbound` run by
+hand — nothing here does it automatically. `pihole.service`/`.timer`,
+`roothints.service`, and `cleanup.service`/`.timer` are still not tracked
+here at all.
 
 `cleanup.sh`, `cleanup.service`, and `cleanup.timer` have all been removed
 — the weekly log-truncation/cache-flush/service-restart maintenance pass
@@ -126,6 +135,16 @@ call, just manually now. Neither removal touches `pihole-FTL.service`,
 the actual DNS-resolving daemon installed by Pi-hole itself — that's
 untouched and still running.
 
+**Blocklist and regex sources moved local.** `adlist.sh` used to fetch its
+URL list from an external GitLab repo
+([kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist))
+over the network; that repo has been deleted, and `adlist.sh` now reads
+`blocklist.txt` in this repo instead — no network dependency for the list
+itself, no external single point of failure. `regex.txt` (Pi-hole regex
+denylist patterns) and `regex.sh` (loads them into `gravity.db`'s
+`domainlist` table, type `3`, then runs `pihole reloadlists`) are new,
+tracked here for the first time.
+
 ## Script reference
 
 | Script | Runs | Purpose |
@@ -134,7 +153,8 @@ untouched and still running.
 | `pihole-setup.sh` | install once | Installs Pi-hole via its own official installer. |
 | `unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
 | `unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source. |
-| `adlist.sh` | recurring, manual | Loads the blocklist URL list into `gravity.db`. |
+| `adlist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
+| `regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
 | `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
 | `ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
 
@@ -149,7 +169,8 @@ Manual only, nothing schedules these:
 
 - Gravity/blocklist rebuild (`pihole-update.sh`'s `pihole -g -f`) — used
   to also run daily via `pihole.timer`; that timer is gone.
-- Blocklist source refresh (`adlist.sh`)
+- Blocklist source refresh (`adlist.sh`, from `blocklist.txt`)
+- Regex denylist refresh (`regex.sh`, from `regex.txt`)
 - Pi-hole core updates (`pihole-update.sh`)
 - Unbound version upgrades (`unbound-latest.sh`)
 - Log/cache housekeeping — used to run weekly via `cleanup.timer` →
