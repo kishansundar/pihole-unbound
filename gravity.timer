@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Pi-hole Gravity update daily
+
+[Timer]
+OnCalendar=*-*-* 4:00:00
+RandomizedDelaySec=15m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -23,7 +23,7 @@ flowchart LR
     unbound -.->|"root.hints, monthly"| hints["roothints.timer"]
     blocklist["blocklist.txt"] --> loader["adlist.sh"]
     loader -->|"sqlite3 INSERT"| gdb[("gravity.db")]
-    gdb -.->|"pihole -g compiles\n(manual only)"| ftl
+    gdb -.->|"pihole -g compiles\n(gravity.timer, daily 04:00)"| ftl
     regexfile["regex.txt"] --> regexsh["regex.sh"]
     regexsh -->|"sqlite3 INSERT\n+ pihole reloadlists"| gdb
     admin["pihole-FTL webserver\n:80 / :443\n(built-in, v6+)"] -.manages.-> ftl
@@ -40,6 +40,10 @@ local `blocklist.txt` and writes them into `gravity.db`'s `adlist` table;
 `pihole reloadlists`. Both used to depend on an external GitLab repo
 ([kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist))
 — that repo is gone now; the source lists live in this repo instead.
+`gravity.timer` runs `pihole -g` daily to recompile gravity from whatever
+sources are already configured; it does not re-run `adlist.sh` itself,
+so `blocklist.txt` changes still need a manual `adlist.sh` run.
+`regex.sh` is manual-only too.
 
 Pi-hole's upstream DNS server has to be pointed at `127.0.0.1#5353` for this
 to work — that's set interactively during `pihole-setup.sh`'s call into
@@ -100,18 +104,40 @@ haven't been restored. The currently-provisioned host works because those
 files are already live under `/etc/systemd/system` and `/etc/unbound` from
 before; a fresh clone onto a new host would need them copied into place
 and `systemctl daemon-reload && systemctl enable --now unbound` run by
-hand — nothing here does it automatically. `pihole.service`/`.timer`,
-`roothints.service`, and `cleanup.service`/`.timer` are still not tracked
-here at all.
+hand — nothing here does it automatically. `cleanup.service`/`.timer` are
+still not tracked here at all.
+
+`roothints.service`/`.timer` and `roothints.sh` are tracked now too.
+`roothints.service` used to run a bare `curl -o /etc/unbound/root.hints
+...` directly — the same unprotected-overwrite bug that was fixed in
+`unbound-latest.sh` earlier (a failed/truncated fetch would clobber the
+only path left to resolution, since there's no forward-zone fallback).
+Fixed the same way here: `roothints.sh` downloads to a temp file first
+and only replaces the live file if the result looks valid.
+`roothints.service` calls `/etc/unbound/roothints.sh` (a deployed copy,
+not the repo path) — same reasoning as `ulimit.sh`: this script has no
+dependency on anything else in the repo, so it shouldn't break if the
+repo's own path ever changes again.
 
 `cleanup.sh`, `cleanup.service`, and `cleanup.timer` have all been removed
 — the weekly log-truncation/cache-flush/service-restart maintenance pass
-no longer runs, on any schedule or by hand. `pihole.service` and
-`pihole.timer` (the daily 04:00 automatic `pihole -g` gravity rebuild)
-have been removed too; `pihole-update.sh` still does the same `pihole -g`
-call, just manually now. Neither removal touches `pihole-FTL.service`,
-the actual DNS-resolving daemon installed by Pi-hole itself — that's
-untouched and still running.
+no longer runs, on any schedule or by hand. Neither this nor anything
+below touches `pihole-FTL.service`, the actual DNS-resolving daemon
+installed by Pi-hole itself — that's untouched and has been running the
+whole time.
+
+The daily 04:00 automatic `pihole -g` gravity rebuild — originally
+`pihole.service`/`.timer`, untracked, removed earlier this session — is
+back as **`gravity.service`/`.timer`**: same content (a oneshot
+`pihole -g` triggered daily), tracked in the repo this time, and
+renamed because `pihole.service` sitting next to the real
+`pihole-FTL.service` was confusing — easy to mistake one for "is
+Pi-hole running?" and the other for "did gravity update?" `roothints`
+already used this naming style (named after what it refreshes, no
+`pihole-`/`unbound-` prefix needed since it's unambiguous), so `gravity`
+follows the same convention. `pihole-update.sh` still does the same
+`pihole -g` call too, manually, for when you also want to update
+Pi-hole core at the same time (`pihole -up`).
 
 **Blocklist and regex sources moved local.** `adlist.sh` used to fetch its
 URL list from an external GitLab repo
@@ -122,6 +148,12 @@ itself, no external single point of failure. `regex.txt` (Pi-hole regex
 denylist patterns) and `regex.sh` (loads them into `gravity.db`'s
 `domainlist` table, type `3`, then runs `pihole reloadlists`) are new,
 tracked here for the first time.
+
+**Gravity rebuild is automatic again**, via the recreated
+`gravity.timer` above — daily at 04:00 (±15m), just `pihole -g` against
+whatever's already configured. Verified with a real manual run:
+2,403,280 gravity domains compiled successfully from the 15 sources in
+`blocklist.txt` plus the 14 regex filters from `regex.txt`.
 
 ## Script reference
 
@@ -135,23 +167,29 @@ tracked here for the first time.
 | `regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
 | `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
 | `ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
+| `roothints.sh` | monthly, via `roothints.timer`, deployed to `/etc/unbound/roothints.sh` | Safely refreshes `/etc/unbound/root.hints` (temp file + validation before replacing). |
 
 ## Maintenance
 
-Automatic, via the one systemd timer still installed on the host:
+Automatic, via systemd timers tracked in this repo:
 
-- **`roothints.timer`** — monthly → re-`curl`s `named.cache` into
-  `/etc/unbound/root.hints`.
+- **`roothints.timer`** — monthly → `roothints.sh` safely refreshes
+  `/etc/unbound/root.hints` (temp file + validation, won't clobber the
+  existing file on a failed fetch).
+- **`gravity.timer`** — daily, 04:00 (±15m) → `pihole -g` rebuilds
+  gravity from whatever sources are already configured. Does **not**
+  re-run `adlist.sh` — new `blocklist.txt` URLs still need a manual run
+  before this timer will pick them up.
 
 Manual only, nothing schedules these:
 
-- Gravity/blocklist rebuild (`pihole-update.sh`'s `pihole -g -f`) — used
-  to also run daily via `pihole.timer`; that timer is gone.
 - Blocklist source refresh (`adlist.sh`, from `blocklist.txt`)
 - Regex denylist refresh (`regex.sh`, from `regex.txt`)
 - Pi-hole core updates (`pihole-update.sh`)
 - Unbound version upgrades (`unbound-latest.sh`)
 - Log/cache housekeeping — used to run weekly via `cleanup.timer` →
-  `cleanup.sh`; both are gone, and nothing replaces them.
+  `cleanup.sh`; both are gone. In practice this matters less than it
+  sounds: `/var/log`'s system logs are already handled by `logrotate`
+  independently of anything in this repo.
 - DNSSEC trust anchor refresh (only happens as a side effect of
   re-running `unbound-latest.sh`)
