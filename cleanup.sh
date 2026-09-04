@@ -22,7 +22,7 @@ echo "Flushing Pi-hole logs..."
 
 echo "------------------------------------------"
 echo "Flushing ARP cache for Pi-hole..."
-/usr/local/bin/pihole arpflush
+/usr/local/bin/pihole  networkflush
 
 echo "------------------------------------------"
 echo "Restarting services..."
