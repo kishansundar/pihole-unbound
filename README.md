@@ -11,6 +11,41 @@ Debian-derived host.
 There is no installer or Makefile — each script below is run by hand, as
 root, in the order listed.
 
+## Repository layout
+
+```
+pihole-unbound/
+├── README.md
+├── apt-upgrade.sh      # cross-cutting: not specific to either subsystem
+├── deploy-units.sh     # cross-cutting: deploys files from both folders below
+├── unbound/            # everything for the resolver
+│   ├── unbound-setup.sh
+│   ├── unbound-latest.sh
+│   ├── unbound.conf
+│   ├── unbound.service
+│   ├── ulimit.sh
+│   ├── roothints.sh
+│   ├── roothints.service
+│   └── roothints.timer
+└── pihole/             # everything for the DNS server / ad-blocker
+    ├── pihole-setup.sh
+    ├── pihole-update.sh
+    ├── adlist.sh
+    ├── blocklist.txt
+    ├── regex.sh
+    ├── regex.txt
+    ├── gravity.service
+    └── gravity.timer
+```
+
+Grouped by subsystem, not by file type — a `.sh` and its matching
+`.service`/`.timer` (e.g. `roothints.sh` + `roothints.service`) stay
+next to each other rather than split across a `scripts/` and a
+`systemd/` folder. No live systemd unit references a path inside this
+repo (`unbound.service` and `roothints.service` both call deployed
+copies under `/etc/unbound/`, not the repo) — moving files around here
+only affects how you invoke scripts by hand, never the running system.
+
 ## How it works
 
 ```mermaid
@@ -63,30 +98,33 @@ it automatically.
 
 ```
 ./apt-upgrade.sh
-./pihole-setup.sh
-./unbound-setup.sh
-./unbound-latest.sh
+./pihole/pihole-setup.sh
+./unbound/unbound-setup.sh
+./unbound/unbound-latest.sh
 ./deploy-units.sh
-./adlist.sh
-./pihole-update.sh
+./pihole/adlist.sh
+./pihole/pihole-update.sh
 ```
 
 1. **`apt-upgrade.sh`** — `apt-get update && full-upgrade && autoremove && autoclean`.
-2. **`pihole-setup.sh`** — installs `git build-essential wget`, clones
-   `pi-hole/pi-hole`, runs its official installer (`basic-install.sh`).
-   **Point Pi-hole's upstream DNS at `127.0.0.1#5353` here.**
-3. **`unbound-setup.sh`** — creates the `unbound` system user/group
-   (uid/gid 88) and installs its build dependencies.
-4. **`unbound-latest.sh`** — downloads, builds, and installs Unbound
-   1.26.0 from source, fetches root hints and the DNSSEC trust anchor,
-   runs `unbound-control-setup`. Also deploys `unbound.conf`/
-   `unbound.service`/`ulimit.sh` itself (see **State of this repo**).
+2. **`pihole/pihole-setup.sh`** — installs `git build-essential wget`,
+   clones `pi-hole/pi-hole`, runs its official installer
+   (`basic-install.sh`). **Point Pi-hole's upstream DNS at
+   `127.0.0.1#5353` here.**
+3. **`unbound/unbound-setup.sh`** — creates the `unbound` system
+   user/group (uid/gid 88) and installs its build dependencies.
+4. **`unbound/unbound-latest.sh`** — downloads, builds, and installs
+   Unbound 1.26.0 from source, fetches root hints and the DNSSEC trust
+   anchor, runs `unbound-control-setup`. Also deploys
+   `unbound.conf`/`unbound.service`/`ulimit.sh` itself (see **State of
+   this repo**).
 5. **`deploy-units.sh`** — installs everything else tracked here:
-   `roothints.sh`/`.service`/`.timer` and `gravity.service`/`.timer`,
-   enables both timers. Safe to re-run any time.
-6. **`adlist.sh`** — reads `blocklist.txt` (tracked in this repo) and
-   loads its URLs into `gravity.db`.
-7. **`pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
+   `unbound/roothints.sh`/`.service`/`.timer` and
+   `pihole/gravity.service`/`.timer`, enables both timers. Safe to
+   re-run any time.
+6. **`pihole/adlist.sh`** — reads `blocklist.txt` (tracked alongside it)
+   and loads its URLs into `gravity.db`.
+7. **`pihole/pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
 
 `post-install.sh`, which used to handle all of this deployment in one
 step, was removed earlier — `unbound-latest.sh` and `deploy-units.sh`
@@ -96,9 +134,8 @@ also used to make. Those aren't tracked or reapplied by anything here.
 
 ## State of this repo
 
-Every config file and systemd unit this toolkit needs is tracked at the
-repo root — `unbound.conf`, `unbound.service`, `ulimit.sh`,
-`roothints.sh`/`.service`/`.timer`, `gravity.service`/`.timer` — and
+Every config file and systemd unit this toolkit needs is tracked in
+`unbound/` or `pihole/` (see **Repository layout** above) — and
 **`deploy-units.sh` installs all of it**: copies each file to its live
 location with the right owner/mode, backs up an existing
 `/etc/unbound/unbound.conf` first (timestamped `.bak`), reloads systemd,
@@ -151,15 +188,15 @@ this repo instead, no network dependency for the source lists themselves.
 | Script | Runs | Purpose |
 |---|---|---|
 | `apt-upgrade.sh` | install, ad hoc | System package update/upgrade/cleanup. |
-| `pihole-setup.sh` | install once | Installs Pi-hole via its own official installer. |
-| `unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
-| `unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source; deploys `unbound.conf`/`.service`/`ulimit.sh`. |
-| `deploy-units.sh` | install, and after editing any tracked unit/config | Installs `roothints.*`/`gravity.*` to `/etc`, enables both timers. Idempotent. |
-| `adlist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
-| `regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
-| `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
-| `ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
-| `roothints.sh` | monthly, via `roothints.timer`, deployed to `/etc/unbound/roothints.sh` | Safely refreshes `/etc/unbound/root.hints` (temp file + validation before replacing). |
+| `pihole/pihole-setup.sh` | install once | Installs Pi-hole via its own official installer. |
+| `unbound/unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
+| `unbound/unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source; deploys `unbound.conf`/`.service`/`ulimit.sh`. |
+| `deploy-units.sh` | install, and after editing any tracked unit/config | Installs `unbound/roothints.*` and `pihole/gravity.*` to `/etc`, enables both timers. Idempotent. |
+| `pihole/adlist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
+| `pihole/regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
+| `pihole/pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
+| `unbound/ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
+| `unbound/roothints.sh` | monthly, via `roothints.timer`, deployed to `/etc/unbound/roothints.sh` | Safely refreshes `/etc/unbound/root.hints` (temp file + validation before replacing). |
 
 ## Maintenance
 
