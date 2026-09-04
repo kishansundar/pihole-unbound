@@ -156,6 +156,7 @@ if curl -4 -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named
     && [ "$(wc -l < "$root_hints_tmp")" -ge 10 ]; then
   sudo mv "$root_hints_tmp" /etc/unbound/root.hints
   sudo chown unbound:unbound /etc/unbound/root.hints
+  sudo chmod 644 /etc/unbound/root.hints
   echo "OK: root.hints refreshed ($(wc -l < /etc/unbound/root.hints) lines)."
 else
   echo "WARN: root.hints refresh failed or looked invalid — keeping the existing /etc/unbound/root.hints untouched." >&2
