@@ -132,9 +132,6 @@ before any of the scripts above will have something to run against.
 | `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
 | `cleanup.sh` | weekly, via `cleanup.timer` | Truncates logs, flushes Pi-hole's cache, restarts `pihole-FTL`/`unbound`. |
 | `ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
-| `status.sh` | ad hoc, manual | Read-only `systemctl status` dump for Pi-hole, Unbound, and the three timers. |
-| `pull.sh` | manual | Hard-resets this checkout to `origin/main` (`git clean -df && reset --hard`) — **discards local changes**. |
-| `push.sh` | manual | `git add` everything, commits, pushes to `origin/main`. |
 
 ## Maintenance
 
@@ -154,4 +151,3 @@ Manual only, nothing schedules these:
 - Unbound version upgrades (`unbound-latest.sh`)
 - DNSSEC trust anchor refresh (only happens as a side effect of
   re-running `unbound-latest.sh`)
-- Repo sync (`pull.sh` / `push.sh`)
