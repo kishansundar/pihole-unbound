@@ -86,7 +86,21 @@ sudo make install || { echo "ERROR: make install failed" >&2; exit 1; }
 
 sudo mv -v /usr/sbin/unbound-host /usr/bin/
 
-sudo curl --output /etc/unbound/root.hints https://www.internic.net/domain/named.cache
+# Fetch to a temp file first and only replace the live root.hints if the
+# download actually succeeded and looks like a real hints file — a failed
+# or truncated overwrite here matters a lot now that unbound.conf has no
+# forward-zone fallback: root.hints is the only path left to resolution.
+root_hints_tmp=$(mktemp)
+if curl -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
+    && [ -s "$root_hints_tmp" ] \
+    && [ "$(wc -l < "$root_hints_tmp")" -ge 10 ]; then
+  sudo mv "$root_hints_tmp" /etc/unbound/root.hints
+  sudo chown unbound:unbound /etc/unbound/root.hints
+  echo "OK: root.hints refreshed ($(wc -l < /etc/unbound/root.hints) lines)."
+else
+  echo "WARN: root.hints refresh failed or looked invalid — keeping the existing /etc/unbound/root.hints untouched." >&2
+  rm -f "$root_hints_tmp"
+fi
 
 # --- (1) + (5) trust anchor: correct path, ensure the directory exists, match unbound.service's own pattern ---
 sudo mkdir -p /etc/unbound/anchor
