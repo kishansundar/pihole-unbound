@@ -22,7 +22,7 @@ flowchart LR
     unbound -->|"DNS-over-TLS :853"| quad9["Quad9\n9.9.9.9 / 149.112.112.112"]
     unbound -.->|"root.hints, monthly"| hints["roothints.timer"]
     loader["adlist.sh"] -->|"sqlite3 INSERT"| gdb[("gravity.db")]
-    gdb -->|"pihole -g compiles"| ftl
+    gdb -.->|"pihole -g compiles\n(manual only)"| ftl
     admin["lighttpd admin UI\n:80 / :443"] -.manages.-> ftl
 ```
 
@@ -57,7 +57,6 @@ it automatically.
 ./unbound-latest.sh
 ./adlist.sh
 ./pihole-update.sh
-./cleanup.sh
 ```
 
 1. **`apt-upgrade.sh`** — `apt-get update && full-upgrade && autoremove && autoclean`.
@@ -72,16 +71,14 @@ it automatically.
 5. **`adlist.sh`** — fetches the blocklist-URL list and loads it into
    `gravity.db`.
 6. **`pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
-7. **`cleanup.sh`** — first maintenance pass: log truncation, cache
-   flush, service restart.
 
 There is no longer a script that deploys `unbound.conf`/the systemd units,
-sets `pihole-FTL.conf`/`dnsmasq`/`/etc/hosts`, or enables/restarts the
-`unbound`, `pihole.timer`, `roothints.timer`, `cleanup.timer` services —
-that was `post-install.sh`, removed. On a host where those units are
-already installed and enabled (true of the currently-provisioned box),
-nothing above needs it. On a fresh host, none of that setup happens unless
-you do it by hand or restore the script — see below.
+sets `pihole-FTL.conf`/`dnsmasq`/`/etc/hosts`, or enables/restarts
+`unbound`/`roothints.timer` — that was `post-install.sh`, removed. On a
+host where those units are already installed and enabled (true of the
+currently-provisioned box), nothing above needs it. On a fresh host, none
+of that setup happens unless you do it by hand or restore the script —
+see below.
 
 ### Lighttpd HTTPS (manual, optional)
 
@@ -108,17 +105,26 @@ sudo systemctl restart lighttpd
 ## State of this repo
 
 This repo does **not** contain the systemd unit files (`unbound.service`,
-`pihole.service`/`.timer`, `roothints.service`/`.timer`,
-`cleanup.service`/`.timer`), `unbound.conf`, or a script to deploy,
-enable, or reload any of them — `conf/`, `services/`, and `post-install.sh`
-were all removed. The currently-provisioned host still has those units
-installed, enabled, and running under `/etc/systemd/system` and
-`/etc/unbound` from before, which is the only reason this toolkit still
-works today. **A fresh clone onto a new host has no path to a working
-install** — the unit files, `unbound.conf`, and the config/enable step all
-need to be recreated by hand or recovered from git history
+`pihole.service`/`.timer`, `roothints.service`/`.timer`), `unbound.conf`,
+or a script to deploy, enable, or reload any of them — `conf/`,
+`services/`, and `post-install.sh` were all removed. The
+currently-provisioned host still has those units installed, enabled, and
+running under `/etc/systemd/system` and `/etc/unbound` from before, which
+is the only reason this toolkit still works today. **A fresh clone onto a
+new host has no path to a working install** — the unit files,
+`unbound.conf`, and the config/enable step all need to be recreated by
+hand or recovered from git history
 (`git log --all -- '*.service' '*.timer' conf/unbound.conf post-install.sh`)
 before any of the scripts above will have something to run against.
+
+`cleanup.sh`, `cleanup.service`, and `cleanup.timer` have all been removed
+— the weekly log-truncation/cache-flush/service-restart maintenance pass
+no longer runs, on any schedule or by hand. `pihole.service` and
+`pihole.timer` (the daily 04:00 automatic `pihole -g` gravity rebuild)
+have been removed too; `pihole-update.sh` still does the same `pihole -g`
+call, just manually now. Neither removal touches `pihole-FTL.service`,
+the actual DNS-resolving daemon installed by Pi-hole itself — that's
+untouched and still running.
 
 ## Script reference
 
@@ -130,24 +136,23 @@ before any of the scripts above will have something to run against.
 | `unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source. |
 | `adlist.sh` | recurring, manual | Loads the blocklist URL list into `gravity.db`. |
 | `pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
-| `cleanup.sh` | weekly, via `cleanup.timer` | Truncates logs, flushes Pi-hole's cache, restarts `pihole-FTL`/`unbound`. |
 | `ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
 
 ## Maintenance
 
-Automatic, via systemd timers already installed on the host:
+Automatic, via the one systemd timer still installed on the host:
 
-- **`pihole.timer`** — daily 04:00 (±15 min) → `pihole -g`, recompiles
-  gravity from whatever lists are already in `gravity.db`. Does **not**
-  re-fetch the URL list from GitLab.
 - **`roothints.timer`** — monthly → re-`curl`s `named.cache` into
   `/etc/unbound/root.hints`.
-- **`cleanup.timer`** — weekly → runs `cleanup.sh`.
 
 Manual only, nothing schedules these:
 
+- Gravity/blocklist rebuild (`pihole-update.sh`'s `pihole -g -f`) — used
+  to also run daily via `pihole.timer`; that timer is gone.
 - Blocklist source refresh (`adlist.sh`)
 - Pi-hole core updates (`pihole-update.sh`)
 - Unbound version upgrades (`unbound-latest.sh`)
+- Log/cache housekeeping — used to run weekly via `cleanup.timer` →
+  `cleanup.sh`; both are gone, and nothing replaces them.
 - DNSSEC trust anchor refresh (only happens as a side effect of
   re-running `unbound-latest.sh`)
