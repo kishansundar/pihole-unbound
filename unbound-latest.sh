@@ -14,7 +14,7 @@ fi
 
 cd ~ || exit 1
 
-wget "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
+wget -O "unbound-${version}.tar.gz" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
   || { echo "ERROR: download of unbound-${version}.tar.gz failed" >&2; exit 1; }
 
 #https://nlnetlabs.nl/downloads/unbound/unbound-latest.tar.gz
@@ -25,10 +25,16 @@ wget "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
 # https://nlnetlabs.nl/signing-keys/
 NLNETLABS_FPR="231018690C4D903EF419146AA144323DEAACDF45"
 
-wget "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz.asc" \
+wget -O "unbound-${version}.tar.gz.asc" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz.asc" \
   || { echo "ERROR: download of the .asc signature failed" >&2; exit 1; }
-wget -O nlnetlabs.certs "https://nlnetlabs.nl/downloads/keys/releases-g2.asc" \
+wget -O nlnetlabs.asc "https://nlnetlabs.nl/downloads/keys/releases-g2.asc" \
   || { echo "ERROR: download of NLnet Labs' signing key failed" >&2; exit 1; }
+
+# gpgv (unlike full gpg) requires a binary keyring — the downloaded key is
+# ASCII-armored, so it has to be dearmored first or gpgv fails with
+# "invalid packet" trying to parse the "-----BEGIN PGP..." text as binary.
+gpg --dearmor -o nlnetlabs.certs nlnetlabs.asc \
+  || { echo "ERROR: could not process NLnet Labs' signing key" >&2; exit 1; }
 
 got_fpr=$(gpg --with-colons --import-options show-only --import --fingerprint nlnetlabs.certs 2>/dev/null \
   | awk -F: '/^fpr:/{print $10; exit}')
@@ -44,7 +50,7 @@ gpgv --keyring=./nlnetlabs.certs "unbound-${version}.tar.gz.asc" "unbound-${vers
 echo "OK: unbound-${version}.tar.gz signature verified against NLnet Labs' release key."
 
 tar -xzf "unbound-${version}.tar.gz" || { echo "ERROR: extraction failed" >&2; exit 1; }
-rm -f "unbound-${version}.tar.gz" "unbound-${version}.tar.gz.asc" nlnetlabs.certs
+rm -f "unbound-${version}.tar.gz" "unbound-${version}.tar.gz.asc" nlnetlabs.asc nlnetlabs.certs
 rm -Rf unbound-latest
 mv "unbound-${version}" unbound-latest
 cd unbound-latest || exit 1
