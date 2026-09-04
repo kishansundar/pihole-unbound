@@ -146,8 +146,12 @@ sudo systemctl daemon-reload
 # download actually succeeded and looks like a real hints file — a failed
 # or truncated overwrite here matters a lot now that unbound.conf has no
 # forward-zone fallback: root.hints is the only path left to resolution.
+#
+# -4: this host's IPv6 route to internic.net is blackholed (TLS handshake
+# hangs and times out over IPv6; IPv4 works in <1s) — force IPv4 rather
+# than relying on the temp-file safety net to catch the fallout.
 root_hints_tmp=$(mktemp)
-if curl -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
+if curl -4 -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
     && [ -s "$root_hints_tmp" ] \
     && [ "$(wc -l < "$root_hints_tmp")" -ge 10 ]; then
   sudo mv "$root_hints_tmp" /etc/unbound/root.hints

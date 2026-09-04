@@ -6,9 +6,16 @@
 # ran `curl -o /etc/unbound/root.hints ...` directly — a failed/truncated
 # fetch would have clobbered the file in place, and unbound.conf has no
 # forward-zone fallback, so root.hints is the only path to resolution.
+#
+# -4: this host's IPv6 route to internic.net is blackholed (TLS handshake
+# hangs and times out over IPv6, confirmed with curl -6; IPv4 works fine
+# in <1s) — curl tries IPv6 first by default, and depending on timing that
+# either falls back to IPv4 cleanly or surfaces as a bare connection
+# reset. Forcing IPv4 here skips the broken path entirely rather than
+# relying on the temp-file safety net to catch the failure after the fact.
 
 root_hints_tmp=$(mktemp)
-if curl -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
+if curl -4 -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
     && [ -s "$root_hints_tmp" ] \
     && [ "$(wc -l < "$root_hints_tmp")" -ge 10 ]; then
   mv "$root_hints_tmp" /etc/unbound/root.hints
