@@ -7,5 +7,6 @@ After=network-online.target
 Type=oneshot
 ExecStart=/usr/local/bin/pihole -g
 ProtectSystem=full
+ReadWritePaths=/etc/pihole
 ProtectHome=true
 PrivateTmp=true
