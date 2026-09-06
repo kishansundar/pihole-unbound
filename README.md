@@ -30,7 +30,7 @@ pihole-unbound/
 └── pihole/             # everything for the DNS server / ad-blocker
     ├── pihole-setup.sh
     ├── pihole-update.sh
-    ├── adlist.sh
+    ├── blocklist.sh
     ├── blocklist.txt
     ├── regex.sh
     ├── regex.txt
@@ -56,7 +56,7 @@ flowchart LR
     decision -->|"no, cache miss"| unbound["Unbound\n127.0.0.1:5353\n(loopback only)"]
     unbound -->|"DNS-over-TLS :853"| quad9["Quad9\n9.9.9.9 / 149.112.112.112"]
     unbound -.->|"root.hints, monthly"| hints["roothints.timer"]
-    blocklist["blocklist.txt"] --> loader["adlist.sh"]
+    blocklist["blocklist.txt"] --> loader["blocklist.sh"]
     loader -->|"sqlite3 INSERT"| gdb[("gravity.db")]
     gdb -.->|"pihole -g compiles\n(gravity.timer, daily 04:00)"| ftl
     regexfile["regex.txt"] --> regexsh["regex.sh"]
@@ -68,7 +68,7 @@ Pi-hole (FTL) is the DNS server every device on the LAN talks to. It checks
 each query against `/etc/pihole/gravity.db` and sinkholes matches; anything
 else goes to Unbound, which only listens on loopback (`127.0.0.1:5353`) and
 forwards upstream over DNS-over-TLS to Quad9. Blocklists and regex rules
-are not managed through Pi-hole's own UI — `adlist.sh` reads URLs from the
+are not managed through Pi-hole's own UI — `blocklist.sh` reads URLs from the
 local `blocklist.txt` and writes them into `gravity.db`'s `adlist` table;
 `regex.sh` reads patterns from the local `regex.txt` and writes them into
 `gravity.db`'s `domainlist` table (type `3`, deny/regex), then runs
@@ -76,8 +76,8 @@ local `blocklist.txt` and writes them into `gravity.db`'s `adlist` table;
 ([kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist))
 — that repo is gone now; the source lists live in this repo instead.
 `gravity.timer` runs `pihole -g` daily to recompile gravity from whatever
-sources are already configured; it does not re-run `adlist.sh` itself,
-so `blocklist.txt` changes still need a manual `adlist.sh` run.
+sources are already configured; it does not re-run `blocklist.sh` itself,
+so `blocklist.txt` changes still need a manual `blocklist.sh` run.
 `regex.sh` is manual-only too.
 
 Pi-hole's upstream DNS server has to be pointed at `127.0.0.1#5353` for this
@@ -92,7 +92,7 @@ it automatically.
 - A host with Pi-hole already installed (`pihole-setup.sh`) before running
   `deploy-units.sh` — see **Install order** below.
 - Internet access for `apt`, GitHub, and `nlnetlabs.nl`. No longer needs
-  GitLab — `adlist.sh`/`regex.sh` read local files now.
+  GitLab — `blocklist.sh`/`regex.sh` read local files now.
 
 ## Install order
 
@@ -102,7 +102,7 @@ it automatically.
 ./unbound/unbound-setup.sh
 ./unbound/unbound-latest.sh
 ./deploy-units.sh
-./pihole/adlist.sh
+./pihole/blocklist.sh
 ./pihole/pihole-update.sh
 ```
 
@@ -122,7 +122,7 @@ it automatically.
    `unbound/roothints.sh`/`.service`/`.timer` and
    `pihole/gravity.service`/`.timer`, enables both timers. Safe to
    re-run any time.
-6. **`pihole/adlist.sh`** — reads `blocklist.txt` (tracked alongside it)
+6. **`pihole/blocklist.sh`** — reads `blocklist.txt` (tracked alongside it)
    and loads its URLs into `gravity.db`.
 7. **`pihole/pihole-update.sh`** — `pihole -up` then `pihole -g -f`.
 
@@ -172,13 +172,13 @@ gravity rebuild that used to be `pihole.service`/`.timer` (untracked,
 removed earlier this session) — same behavior, renamed to avoid sitting
 confusingly next to the real `pihole-FTL.service` (easy to mistake "is
 Pi-hole running?" for "did gravity update?"). It deliberately does *not*
-also run `adlist.sh` — just the gravity recompile against whatever's
+also run `blocklist.sh` — just the gravity recompile against whatever's
 already configured; new `blocklist.txt` URLs still need a manual
-`adlist.sh` run before this timer picks them up. Verified with a real
+`blocklist.sh` run before this timer picks them up. Verified with a real
 run: 2,403,280 gravity domains compiled from the 15 sources in
 `blocklist.txt` plus the 14 regex filters in `regex.txt`.
 
-`adlist.sh`/`regex.sh` both used to depend on an external GitLab repo
+`blocklist.sh`/`regex.sh` both used to depend on an external GitLab repo
 ([kishansundar/pihole-adlist](https://gitlab.com/kishansundar/pihole-adlist),
 now deleted) — both read local files (`blocklist.txt`, `regex.txt`) in
 this repo instead, no network dependency for the source lists themselves.
@@ -192,7 +192,7 @@ this repo instead, no network dependency for the source lists themselves.
 | `unbound/unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
 | `unbound/unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source; deploys `unbound.conf`/`.service`/`ulimit.sh`. |
 | `deploy-units.sh` | install, and after editing any tracked unit/config | Installs `unbound/roothints.*` and `pihole/gravity.*` to `/etc`, enables both timers. Idempotent. |
-| `pihole/adlist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
+| `pihole/blocklist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
 | `pihole/regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
 | `pihole/pihole-update.sh` | recurring, manual | Updates Pi-hole core and force-rebuilds gravity. |
 | `unbound/ulimit.sh` | on every Unbound start, via `unbound.service`'s `ExecStartPre` | Kernel network-buffer/TCP tuning (`sysctl -w`). |
@@ -207,12 +207,12 @@ Automatic, via systemd timers tracked in this repo:
   existing file on a failed fetch).
 - **`gravity.timer`** — daily, 04:00 (±15m) → `pihole -g` rebuilds
   gravity from whatever sources are already configured. Does **not**
-  re-run `adlist.sh` — new `blocklist.txt` URLs still need a manual run
+  re-run `blocklist.sh` — new `blocklist.txt` URLs still need a manual run
   before this timer will pick them up.
 
 Manual only, nothing schedules these:
 
-- Blocklist source refresh (`adlist.sh`, from `blocklist.txt`)
+- Blocklist source refresh (`blocklist.sh`, from `blocklist.txt`)
 - Regex denylist refresh (`regex.sh`, from `regex.txt`)
 - Pi-hole core updates (`pihole-update.sh`)
 - Unbound version upgrades (`unbound-latest.sh`)

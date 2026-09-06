@@ -37,5 +37,5 @@ fi
 rm -f "$TMP_SQL"
 
 # Regex/domainlist changes need a list reload to take effect immediately;
-# unlike adlist.sh's gravity/adlist changes, this doesn't need -g/pihole -up.
+# unlike blocklist.sh's gravity/adlist changes, this doesn't need -g/pihole -up.
 pihole reloadlists

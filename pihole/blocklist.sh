@@ -24,7 +24,7 @@ create_sql_dump() {
             | sort -u \
             | while IFS= read -r url; do
                   esc=$(printf '%s' "$url" | sed "s/'/''/g")
-                  printf "INSERT INTO 'adlist' (address, enabled, comment) VALUES('%s', 1, 'Added by adlist.sh');\n" "$esc"
+                  printf "INSERT INTO 'adlist' (address, enabled, comment) VALUES('%s', 1, 'Added by blocklist.sh');\n" "$esc"
               done
         echo 'COMMIT;'
     } >"$sql_dump"
