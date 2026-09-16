@@ -5,7 +5,11 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 FALLBACK_VERSION="1.26.0"
 
 # --- discover the latest release upstream; default to it unless UNBOUND_VERSION overrides ---
-latest_seen=$(curl -fsS --connect-timeout 5 --max-time 15 https://nlnetlabs.nl/downloads/unbound/ 2>/dev/null \
+# -4: this host's IPv6 default route is a router-advertised link-local
+# address that doesn't actually route anywhere (times out or ENETUNREACH),
+# so curl/wget must be forced to IPv4 for every external nlnetlabs.nl call
+# in this script, not just the root.hints fetch further down.
+latest_seen=$(curl -4 -fsS --connect-timeout 5 --max-time 15 https://nlnetlabs.nl/downloads/unbound/ 2>/dev/null \
   | grep -oE 'unbound-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"' \
   | sed -E 's/unbound-([0-9.]+)\.tar\.gz"/\1/' \
   | sort -V | tail -n1)
@@ -34,7 +38,7 @@ fi
 
 cd ~ || exit 1
 
-wget -O "unbound-${version}.tar.gz" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
+wget -4 -O "unbound-${version}.tar.gz" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz" \
   || { echo "ERROR: download of unbound-${version}.tar.gz failed" >&2; exit 1; }
 
 #https://nlnetlabs.nl/downloads/unbound/unbound-latest.tar.gz
@@ -45,9 +49,9 @@ wget -O "unbound-${version}.tar.gz" "https://nlnetlabs.nl/downloads/unbound/unbo
 # https://nlnetlabs.nl/signing-keys/
 NLNETLABS_FPR="231018690C4D903EF419146AA144323DEAACDF45"
 
-wget -O "unbound-${version}.tar.gz.asc" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz.asc" \
+wget -4 -O "unbound-${version}.tar.gz.asc" "https://nlnetlabs.nl/downloads/unbound/unbound-${version}.tar.gz.asc" \
   || { echo "ERROR: download of the .asc signature failed" >&2; exit 1; }
-wget -O nlnetlabs.asc "https://nlnetlabs.nl/downloads/keys/releases-g2.asc" \
+wget -4 -O nlnetlabs.asc "https://nlnetlabs.nl/downloads/keys/releases-g2.asc" \
   || { echo "ERROR: download of NLnet Labs' signing key failed" >&2; exit 1; }
 
 # Resolve gpgv explicitly rather than relying on a bare PATH lookup — it's
