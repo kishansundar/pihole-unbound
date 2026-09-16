@@ -5,7 +5,7 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 version="${UNBOUND_VERSION:-1.26.0}"
 
 # --- (3) check whether a newer release exists upstream (best-effort, non-fatal) ---
-latest_seen=$(curl -fsS https://nlnetlabs.nl/downloads/unbound/ 2>/dev/null \
+latest_seen=$(curl -fsS --connect-timeout 5 --max-time 15 https://nlnetlabs.nl/downloads/unbound/ 2>/dev/null \
   | grep -oE 'unbound-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"' \
   | sed -E 's/unbound-([0-9.]+)\.tar\.gz"/\1/' \
   | sort -V | tail -n1)
@@ -151,7 +151,7 @@ sudo systemctl daemon-reload
 # hangs and times out over IPv6; IPv4 works in <1s) — force IPv4 rather
 # than relying on the temp-file safety net to catch the fallout.
 root_hints_tmp=$(mktemp)
-if curl -4 -fsS --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
+if curl -4 -fsS --connect-timeout 5 --max-time 15 --output "$root_hints_tmp" https://www.internic.net/domain/named.cache \
     && [ -s "$root_hints_tmp" ] \
     && [ "$(wc -l < "$root_hints_tmp")" -ge 10 ]; then
   sudo mv "$root_hints_tmp" /etc/unbound/root.hints
