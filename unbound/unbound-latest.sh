@@ -2,16 +2,23 @@
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
-version="${UNBOUND_VERSION:-1.26.0}"
+FALLBACK_VERSION="1.26.0"
 
-# --- (3) check whether a newer release exists upstream (best-effort, non-fatal) ---
+# --- discover the latest release upstream; default to it unless UNBOUND_VERSION overrides ---
 latest_seen=$(curl -fsS --connect-timeout 5 --max-time 15 https://nlnetlabs.nl/downloads/unbound/ 2>/dev/null \
   | grep -oE 'unbound-[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz"' \
   | sed -E 's/unbound-([0-9.]+)\.tar\.gz"/\1/' \
   | sort -V | tail -n1)
-if [ -n "$latest_seen" ] && [ "$latest_seen" != "$version" ]; then
-  echo "NOTE: building pinned version ${version}, but ${latest_seen} is available upstream." >&2
-  echo "      override with: UNBOUND_VERSION=${latest_seen} ./unbound-latest.sh" >&2
+
+if [ -n "$latest_seen" ]; then
+  version="${UNBOUND_VERSION:-$latest_seen}"
+else
+  echo "WARN: could not determine latest upstream version — falling back to ${FALLBACK_VERSION}." >&2
+  version="${UNBOUND_VERSION:-$FALLBACK_VERSION}"
+fi
+
+if [ -n "$UNBOUND_VERSION" ] && [ -n "$latest_seen" ] && [ "$UNBOUND_VERSION" != "$latest_seen" ]; then
+  echo "NOTE: building requested version ${version}, but ${latest_seen} is available upstream." >&2
 fi
 
 # gpg/gpgv are needed for signature verification below. Present on this
