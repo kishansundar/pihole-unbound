@@ -176,13 +176,19 @@ system tolerates but a full boot — SD card I/O, network bring-up, and
 Pi-hole starting concurrently — does not reliably; `ExecStartPost`
 retries once a second for up to 10s instead of a single fixed delay,
 logging via `logger -t unbound-cache` only if it never succeeds.
-Verified with a real reboot: the first `load_cache` attempt failed
-(`connect: Connection refused for 127.0.0.1 port 8953`, socket not up
-yet), the retry one second later succeeded, and no failure was logged.
-`cache.dump` lives under `/var/lib`, which DietPi's RAM-log tmpfs
-mount (`/var/log` only) doesn't touch, so it's on the regular SD-card
-filesystem and does survive a reboot rather than just a service
-restart.
+Verified with two real reboots. First pass: the initial `load_cache`
+attempt failed (`connect: Connection refused for 127.0.0.1 port 8953`,
+socket not up yet), the retry one second later succeeded, and no
+failure was logged. Second pass confirmed the reloaded records are
+actually served, not just present: `www.iana.org` was queried
+pre-reboot (CNAME TTL 3600, A TTL 300) and re-queried immediately
+after; the answer came back with TTL 3460/160 — decremented by the
+~140s elapsed, not reset to the full value — and `Query time: 0 msec`,
+proving it was answered from the persisted cache rather than a fresh
+upstream fetch. `cache.dump` lives under `/var/lib`, which DietPi's
+RAM-log tmpfs mount (`/var/log` only) doesn't touch, so it's on the
+regular SD-card filesystem and does survive a reboot rather than just
+a service restart.
 
 `gravity.service`/`.timer` recreate the daily 04:00 automatic `pihole -g`
 gravity rebuild that used to be `pihole.service`/`.timer` (untracked,
