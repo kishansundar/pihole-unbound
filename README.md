@@ -167,6 +167,23 @@ place — and since `unbound.conf` now has no forward-zone fallback,
 downloads to a temp file first and only replaces the live file if the
 result looks valid.
 
+`unbound.service` persists Unbound's DNS cache across restarts and
+reboots: `ExecStop` dumps it to `/var/lib/unbound/cache.dump` on every
+stop, and `ExecStartPost` reloads it on the next start via
+`unbound-control load_cache`. That reload races the daemon's own
+`unbound-control` socket coming up, which a plain `restart` on an idle
+system tolerates but a full boot — SD card I/O, network bring-up, and
+Pi-hole starting concurrently — does not reliably; `ExecStartPost`
+retries once a second for up to 10s instead of a single fixed delay,
+logging via `logger -t unbound-cache` only if it never succeeds.
+Verified with a real reboot: the first `load_cache` attempt failed
+(`connect: Connection refused for 127.0.0.1 port 8953`, socket not up
+yet), the retry one second later succeeded, and no failure was logged.
+`cache.dump` lives under `/var/lib`, which DietPi's RAM-log tmpfs
+mount (`/var/log` only) doesn't touch, so it's on the regular SD-card
+filesystem and does survive a reboot rather than just a service
+restart.
+
 `gravity.service`/`.timer` recreate the daily 04:00 automatic `pihole -g`
 gravity rebuild that used to be `pihole.service`/`.timer` (untracked,
 removed earlier this session) — same behavior, renamed to avoid sitting
