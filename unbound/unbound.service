@@ -20,7 +20,7 @@ ExecStart=/usr/sbin/unbound -d -p -c /etc/unbound/unbound.conf
 
 ExecReload=+/bin/kill -HUP $MAINPID
 ExecStop=/bin/sh -c '/usr/sbin/unbound-control dump_cache > /var/lib/unbound/cache.dump'
-ExecStartPost=/bin/sh -c 'sleep 2; unbound-control load_cache < /var/lib/unbound/cache.dump || logger -t unbound-cache "load_cache failed"'
+ExecStartPost=/bin/sh -c 'for i in 1 2 3 4 5 6 7 8 9 10; do unbound-control load_cache < /var/lib/unbound/cache.dump && exit 0; sleep 1; done; logger -t unbound-cache "load_cache failed after 10s"'
 
 Restart=always
 RestartSec=360
