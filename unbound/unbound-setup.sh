@@ -16,6 +16,8 @@ if ! id unbound >/dev/null 2>&1; then
     -u "$UNBOUND_UID" -g unbound -s /bin/false unbound
 else
   echo "User 'unbound' already exists, skipping."
+  # an account created elsewhere may have a different home; align it.
+  sudo usermod -d /var/lib/unbound unbound
   # useradd -m only creates the home directory at account-creation time;
   # make sure it exists even when the account already did.
   sudo mkdir -p /var/lib/unbound

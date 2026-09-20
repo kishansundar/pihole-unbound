@@ -14,6 +14,7 @@ LimitNOFILE=8192
 ExecStartPre=
 ExecStartPre=-/usr/sbin/unbound-anchor -a /etc/unbound/anchor/root.key -v
 ExecStartPre=/bin/chown unbound:unbound /etc/unbound/anchor/root.key
+ExecStartPre=/usr/bin/install -d -o unbound -g unbound -m 750 /var/lib/unbound
 ExecStartPre=/bin/bash /etc/unbound/ulimit.sh
 
 ExecStart=/usr/sbin/unbound -d -p -c /etc/unbound/unbound.conf

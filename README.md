@@ -176,6 +176,11 @@ system tolerates but a full boot — SD card I/O, network bring-up, and
 Pi-hole starting concurrently — does not reliably; `ExecStartPost`
 retries once a second for up to 10s instead of a single fixed delay,
 logging via `logger -t unbound-cache` only if it never succeeds.
+An `ExecStartPre` (`install -d`) creates `/var/lib/unbound` as
+`unbound:unbound` 0750 on every start, so persistence no longer depends
+on `unbound-setup.sh` having created it (it was missing on one host,
+silently disabling the dump). `StateDirectory=` isn't used because it
+re-chowns the directory to the service user (root) for every command.
 Verified with two real reboots. First pass: the initial `load_cache`
 attempt failed (`connect: Connection refused for 127.0.0.1 port 8953`,
 socket not up yet), the retry one second later succeeded, and no
