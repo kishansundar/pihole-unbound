@@ -3,8 +3,9 @@
 Shell scripts that provision and maintain a self-hosted, network-wide DNS
 ad-blocker: **Pi-hole** answers every DNS query on the LAN and sinkholes
 ad/tracker domains, backed by **Unbound**, a validating recursive resolver
-compiled from source on the same box, which forwards everything else to
-Quad9 over DNS-over-TLS. Built for a Raspberry Pi running DietPi; the
+compiled from source on the same box, which resolves everything else itself
+from the root servers down (no third-party upstream), over IPv4 only. Built
+for a Raspberry Pi running DietPi; the
 scripts are plain `apt`/`systemd`-based Debian shell and should work on any
 Debian-derived host.
 
@@ -54,7 +55,7 @@ flowchart LR
     ftl -->|"domain in gravity.db?"| decision{"blocked?"}
     decision -->|yes| sink["sinkhole reply\nNXDOMAIN / 0.0.0.0"]
     decision -->|"no, cache miss"| unbound["Unbound\n127.0.0.1:5353\n(loopback only)"]
-    unbound -->|"DNS-over-TLS :853"| quad9["Quad9\n9.9.9.9 / 149.112.112.112"]
+    unbound -->|"recursive, IPv4 only"| roots["root / TLD /\nauthoritative servers"]
     unbound -.->|"root.hints, monthly"| hints["roothints.timer"]
     blocklist["blocklist.txt"] --> loader["blocklist.sh"]
     loader -->|"sqlite3 INSERT"| gdb[("gravity.db")]
@@ -67,7 +68,9 @@ flowchart LR
 Pi-hole (FTL) is the DNS server every device on the LAN talks to. It checks
 each query against `/etc/pihole/gravity.db` and sinkholes matches; anything
 else goes to Unbound, which only listens on loopback (`127.0.0.1:5353`) and
-forwards upstream over DNS-over-TLS to Quad9. Blocklists and regex rules
+resolves it recursively from the root servers itself — there is no
+forwarder, and `do-ip6: no` keeps its own lookups on IPv4, so they leave
+the house behind the ISP's shared address. Blocklists and regex rules
 are not managed through Pi-hole's own UI — `blocklist.sh` reads URLs from the
 local `blocklist.txt` and writes them into `gravity.db`'s `adlist` table;
 `regex.sh` reads patterns from the local `regex.txt` and writes them into
@@ -113,8 +116,9 @@ it automatically.
    `127.0.0.1#5353` here.**
 3. **`unbound/unbound-setup.sh`** — creates the `unbound` system
    user/group (uid/gid 88) and installs its build dependencies.
-4. **`unbound/unbound-latest.sh`** — downloads, builds, and installs
-   Unbound 1.26.0 from source, fetches root hints and the DNSSEC trust
+4. **`unbound/unbound-latest.sh`** — downloads, signature-checks, builds,
+   and installs the latest upstream Unbound release (1.26.1 when last
+   built) from source, fetches root hints and the DNSSEC trust
    anchor, runs `unbound-control-setup`. Also deploys
    `unbound.conf`/`unbound.service`/`ulimit.sh` itself (see **State of
    this repo**).
@@ -176,6 +180,13 @@ system tolerates but a full boot — SD card I/O, network bring-up, and
 Pi-hole starting concurrently — does not reliably; `ExecStartPost`
 retries once a second for up to 10s instead of a single fixed delay,
 logging via `logger -t unbound-cache` only if it never succeeds.
+`ExecStartPost` only loads a dump that is non-empty and under 10 minutes
+old, and deletes it after loading: a dump only gets written on a clean
+stop, so after a power cut the next start would otherwise load whatever
+old file is lying there, and Unbound serves those answers as fresh.
+Every start logs which way it went (`saved cache loaded` / `no fresh
+saved cache, starting empty`). `RestartSec=5` (was 360) means a crash
+costs seconds of DNS, not six minutes.
 An `ExecStartPre` (`install -d`) creates `/var/lib/unbound` as
 `unbound:unbound` 0750 on every start, so persistence no longer depends
 on `unbound-setup.sh` having created it (it was missing on one host,
@@ -218,7 +229,7 @@ this repo instead, no network dependency for the source lists themselves.
 | `apt-upgrade.sh` | install, ad hoc | System package update/upgrade/cleanup. |
 | `pihole/pihole-setup.sh` | install once | Installs Pi-hole via its own official installer. |
 | `unbound/unbound-setup.sh` | install once | Creates the `unbound` user/group, installs build deps. |
-| `unbound/unbound-latest.sh` | install / version bumps | Builds and installs Unbound 1.26.0 from source; deploys `unbound.conf`/`.service`/`ulimit.sh`. |
+| `unbound/unbound-latest.sh` | install / version bumps | Builds and installs the latest upstream Unbound (signature-checked) from source; deploys `unbound.conf`/`.service`/`ulimit.sh`. |
 | `deploy-units.sh` | install, and after editing any tracked unit/config | Installs `unbound/roothints.*` and `pihole/gravity.*` to `/etc`, enables both timers. Idempotent. |
 | `pihole/blocklist.sh` | recurring, manual | Loads `blocklist.txt`'s URLs into `gravity.db`'s `adlist` table. |
 | `pihole/regex.sh` | recurring, manual | Loads `regex.txt`'s patterns into `gravity.db`'s `domainlist` table (type `3`), then `pihole reloadlists`. |
